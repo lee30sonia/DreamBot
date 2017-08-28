@@ -4,9 +4,13 @@ var request = require( 'request');
 var config = require( '../config');
 var GoogleSearch = require('google-search');
 var cheerio = require("cheerio");
-var googleSearch = new GoogleSearch({
+var oxfordLearners = new GoogleSearch({
   key: 'AIzaSyAsGIJCUyKhUtKcraPC2WVu7bhQ19Sw2X4',
   cx: '013483341958330762973:_tmwjyyaxpa'
+});
+var cambridgeEnCh = new GoogleSearch({
+  key: 'AIzaSyAsGIJCUyKhUtKcraPC2WVu7bhQ19Sw2X4',
+  cx: '013483341958330762973:fg6fcohtj2c'
 });
 
 const app = express();
@@ -76,10 +80,15 @@ app.post('/webhook/', (req, res) => {
 app.listen(port, () => console.log(`listening on port ${port}`));
 
 function sendTextMessage(sender, text) {
-  
-  const messageData = {
-    text: text
-  }
+   var messageData;
+   if (text.length>640)
+      messageData = {
+         text:text.substring(0, 639)
+      }
+   else
+      messageData = {
+         text: text
+      }
 
   request({
     url: 'https://graph.facebook.com/v2.6/me/messages',
@@ -101,15 +110,94 @@ function sendTextMessage(sender, text) {
     }
   });
 }
+
+function sendTextMessageWithQR(sender, text, qrs) {
+   var messageData;
+   if (text.length>640)
+      messageData = {
+         text:text.substring(0, 639),
+         quick_replies:qrs
+      }
+   else
+      messageData = {
+         text: text,
+         quick_replies:qrs
+      }
+
+  request({
+    url: 'https://graph.facebook.com/v2.6/me/messages',
+    qs: {
+        access_token:PAGE_TOKEN
+    },
+    method: 'POST',
+    json: {
+      recipient: {
+        id: sender
+      },
+      message: messageData,
+    }
+  }, function(error, response, body) {
+    if (error) {
+      console.log('Error sending message with qr: ', error);
+    } else if (response.body.error) {
+      console.log('Error: ', response.body.error);
+    }
+  });
+}
+
+function sendButton(sender) {
+   var messageData = {
+      attachment:{
+         type:"template",
+         payload:{
+            template_type:"button",
+            text:"Search in Oxford Learner's Dictionary?",
+            buttons:[
+            {
+               type:"postback",
+               title:"Search!",
+               payload:"payload"
+            }]
+         }
+      }
+   }
+  
+  request({
+    url: 'https://graph.facebook.com/v2.6/me/messages',
+    qs: {
+        access_token:PAGE_TOKEN
+    },
+    method: 'POST',
+    json: {
+      recipient: {
+        id: sender
+      },
+      message: messageData,
+    }
+  }, function(error, response, body) {
+    if (error) {
+      console.log('Error sending button: ', error);
+    } else if (response.body.error) {
+      console.log('Error: ', response.body.error);
+    }
+  });
+}
  
 function searchDictionary(word,sender) {
-   googleSearch.build({
+   cambridge(word,sender);
+   /*setTimeout(function(){
+      sendButton(sender);
+   },5000);*/
+}
+
+function oxford(word,sender) {
+   oxfordLearners.build({
       q: word,
       start: 1,
       //fileType: "pdf",
       //gl: "tr", //geolocation, 
       //lr: "lang_tr",
-      num: 1, // Number of search results to return between 1 and 10, inclusive 
+      num: 1 // Number of search results to return between 1 and 10, inclusive 
       //siteSearch: "http://kitaplar.ankara.edu.tr/" // Restricts results to URLs from a specified site 
    }, function(error, response) {
       if (!response.items)
@@ -125,12 +213,55 @@ function searchDictionary(word,sender) {
          	}
          
          	var $ = cheerio.load(body);
-         	var defs = $("span.def");
+         	var defs = $("span.def"); //<span class="def">
          	for (var i=0; i<defs.length; i++){
-         		sendTextMessage(sender, defs.eq(i).text().substring(0, 639));
+         		sendTextMessage(sender, defs.eq(i).text());
          	}
       	});      
       	sendTextMessage(sender, "dictionary link:\n"+response.items[0].link);
-   	  } 
+   	} 
+   });
+}
+
+function cambridge(word,sender) {
+   cambridgeEnCh.build({
+      q: word,
+      start: 1,
+      num: 1
+   }, function(error, response) {
+      if (!response.items)
+      	sendTextMessage(sender, "No result found!");
+      else
+      { 
+      	request({
+         	url: response.items[0].link,
+         	method: "GET"
+      	}, function(error, response, body) {
+         	if (error || !body) {
+            	return;
+         	}
+         
+         	var $ = cheerio.load(body);
+         	var defs = $("b.def");
+         	var trans = $("span.trans:only-of-type");
+         	
+         	var i=0;
+         	function forloop(){
+         	   sendTextMessage(sender, defs.eq(i).text());
+         	   setTimeout(function(){
+         	      sendTextMessage(sender, trans.eq(i).text());
+         	      i++;
+         	      if (i<defs.length)
+         	         setTimeout(forloop,500);
+         	   },300);
+         	}
+         	forloop();
+         	/*for (var i=0; i<defs.length; i++){
+         		sendTextMessage(sender, defs.eq(i).text().substring(0, 639));
+         		sendTextMessage(sender, trans.eq(i).text().substring(0, 639));	
+         	}*/
+      	});      
+      	sendTextMessage(sender, "dictionary link:\n"+response.items[0].link);
+   	} 
    });
 }
