@@ -20,6 +20,8 @@ const VERIFY_TOKEN = config.VERIFY_TOKEN;
 const PAGE_TOKEN = config.PAGE_TOKEN;
 //const PERSONA_ACCOUNT = '2b4572519c088d98984298d8343f8955';
 const mongoUrl = "mongodb://localhost:27017/englishbot";
+const SONIA = '1577355242339196';
+const DEBBIE = '1613235225387887';
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -97,7 +99,7 @@ setInterval(function () {
         "content_type":"text",
         "title":"no",
         "payload":"nothing" }];
-   sendTextMessageWithQR('1577355242339196', "Do you want to take a test now?", qrs);
+   sendTextMessageWithQR(DEBBIE, "Do you want to take a test now?", qrs);
 }, 24*60*60*1000);
 
 
@@ -277,7 +279,8 @@ function cambridge(word,sender) {
 
 function colName(who) {
    var col;
-   if (who=='1577355242339196') col="EnglishBot_Wordbook_Sonia";
+   if (who==SONIA) col="EnglishBot_Wordbook_Sonia";
+   else if (who==DEBBIE) col="EnglishBot_Wordbook_Debbie";
    else col="test";
    return col;
 }
@@ -380,7 +383,7 @@ function response_rem(who,word,rem) {
            "title":"ok let's go",
            "payload":word
            }]);
-   },5000);
+   },8000);
 }
 
 function word_correct(who,word) {
