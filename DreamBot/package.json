@@ -23,7 +23,7 @@
   },
   "scripts": {
     "dev": "npm run build && node bin/dev",
-    "build": "./node_modules/.bin/babel src/ -d lib/",
+    "build": "./../node_modules/.bin/babel src/ -d lib/",
     "start": "node ./bin/fb-bot",
     "prepublish": "npm run build"
   }

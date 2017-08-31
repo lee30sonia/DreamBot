@@ -4,6 +4,7 @@ var request = require('request');
 var config = require('../config');
 var GoogleSearch = require('google-search');
 var cheerio = require("cheerio");
+var mongo = require('mongodb');
 var oxfordLearners = new GoogleSearch({
    key: 'AIzaSyAsGIJCUyKhUtKcraPC2WVu7bhQ19Sw2X4',
    cx: '013483341958330762973:_tmwjyyaxpa'
@@ -18,6 +19,15 @@ const port = '8080';
 const VERIFY_TOKEN = config.VERIFY_TOKEN;
 const PAGE_TOKEN = config.PAGE_TOKEN;
 const PERSONA_ACCOUNT = '2b4572519c088d98984298d8343f8955';
+
+mongo.MongoClient.connect("mongodb://localhost:27017/englishbot", function (err, db) {
+   if (err) throw err;
+   db.createCollection("EnglishBot_Wordbook_Sonia", function (err, res) {
+      if (err) throw err;
+      console.log("collection created");
+      db.close();
+   });
+});
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
