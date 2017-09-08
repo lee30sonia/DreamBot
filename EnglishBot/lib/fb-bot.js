@@ -69,17 +69,17 @@ app.post('/webhook/', (req, res) => {
 });
 
 app.listen(port, () => console.log(`listening on port ${port}`));
-setInterval(function () {
+/*setInterval(function () {
    var qrs = [{
-      "content_type": "text",
-      "title": "yes",
-      "payload": "take_test"
-   }, {
-      "content_type": "text",
-      "title": "no",
-      "payload": "nothing" }];
+        "content_type":"text",
+        "title":"yes",
+        "payload":"take_test"
+        },{
+        "content_type":"text",
+        "title":"no",
+        "payload":"nothing" }];
    sendTextMessageWithQR(DEBBIE, "Do you want to take a test now?", qrs);
-}, 24 * 60 * 60 * 1000);
+}, 24*60*60*1000);*/
 
 function sendMessage(sender, messageData) {
    request({
